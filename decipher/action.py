@@ -9,10 +9,11 @@ from whisper.utils import get_writer
 from ffpb import main as ffpb
 
 
-def transcribe(video_in, output_dir, model, language, task, subs):
+def transcribe(video_in, output_dir, model, language, task, subs, tc):
     video_in = Path(video_in).absolute()
     output_dir = set_workdir(output_dir)
     audio_file = video_in.stem + ".aac"
+    initial_p = "是繁體中文的句子。"
     stream = (
         ffmpeg
         .input(video_in)
@@ -23,7 +24,11 @@ def transcribe(video_in, output_dir, model, language, task, subs):
 
     gpu = torch.cuda.is_available()
     model = whisper.load_model(model)
-    result = model.transcribe(audio_file, task=task, language=language, verbose=True, fp16=gpu)
+    if tc == True:
+        result = model.transcribe(audio_file, task=task, language=language, verbose=True, fp16=gpu, initial_prompt=initial_p)
+    else:
+        result = model.transcribe(audio_file, task=task, language=language, verbose=True, fp16=gpu)
+    
     writer = get_writer("srt", ".")
 
     writer(result, video_in.stem)
